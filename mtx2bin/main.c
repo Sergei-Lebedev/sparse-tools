@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mmio.h"
-#include "mmio.h"
 
 void printHelp(){
     printf("Use this program to convert mtx matrices to slasbin format");
@@ -56,8 +55,8 @@ int readMTX(const char* fileName, int **I, int **J, double **val, int *M, int *N
 
     mm_write_banner(stdout, matcode);
     mm_write_mtx_crd_size(stdout, (*M), (*N), (*nz));
-    for (i=0; i<(*nz); i++)
-        fprintf(stdout, "%d %d %20.19g\n", (*I)[i]+1, (*J)[i]+1, (*val)[i]);
+//    for (i=0; i<(*nz); i++)
+//        fprintf(stdout, "%d %d %20.19g\n", (*I)[i]+1, (*J)[i]+1, (*val)[i]);
     return 0;
 }
 
@@ -107,26 +106,77 @@ int COOtoCRS(int n, int nz, int *I, int *J, double *valCOO, int **row, int **col
     free(places);
     return 0;
 }
-int saveBin(const char* fileName, int *I, int *j, double *val){
+
+int saveBinCRS(const char* fileName, int n, int *row, int *col, double *val){
+    FILE *f;
+    f = fopen(fileName, "wb");
+    fwrite(&n, sizeof(int), 1, f);
+    fwrite(&(row[n]), sizeof(int), 1, f);
+    fwrite(col, sizeof(int), row[n], f);
+    fwrite(row, sizeof(int), n+1, f);
+    fwrite(val, sizeof(double), row[n], f);
+    fclose(f);
+    return 0;
+}
+int cutLowerTriangleCOO(int nz, int *I, int *J, double *val, int *nzU, int **IU, int **JU, double **valU){
+    int i,j;
+    (*nzU) = 0;
+    for(i = 0; i < nz; i++){
+        if (J[i] >= I[i])
+            (*nzU)++;
+    }
+    (*IU) = (int*)malloc((*nzU)*sizeof(int));
+    (*JU) = (int*)malloc((*nzU)*sizeof(int));
+    (*valU) = (double*)malloc((*nzU)*sizeof(double));
+
+    j = 0;
+    for(i = 0; i < nz; i++){
+        if (J[i] >= I[i]) {
+            (*IU)[j] = I[i];
+            (*JU)[j] = J[i];
+            (*valU)[j] = val[i];
+            j += 1;
+        }
+    }
     return 0;
 }
 
+int transposeCOO(int nz, int *I, int *J){
+    int i;
+    for(i = 0; i < nz; i++){
+        int temp;
+        temp = I[i];
+        I[i] = J[i];
+        J[i] = temp;
+    }
+    return 0;
+}
 int main(int argc, char* argv[]){
     int error = 0;
-    int *I, *J;
-    double *val;
+    int *I, *IU, *J, *JU;
+    double *val, *valU;
     int *row, *col;
     double *valCRS;
 
-    int M, N, nz;
-    if (argc < 2) {
+    int M, N, nz, nzU;
+    if (argc < 3) {
         printHelp();
         exit(0);
     }
     if (readMTX(argv[1], &I, &J, &val, &M, &N, &nz) != 0)
         exit(0);
-    COOtoCRS(N, nz, I, J, val, &row, &col, &valCRS);
-    printf("Finished converting coordinate matrix to CRS matrix");
+
+    transposeCOO(nz, I, J);
+    printf("Finished transposing coordinate matrix\n");
+
+    cutLowerTriangleCOO(nz, I, J, val, &nzU, &IU, &JU, &valU);
+    printf("Finished cutting coordinate matrix\n");
+
+    COOtoCRS(N, nzU, IU, JU, val, &row, &col, &valCRS);
+    printf("Finished converting coordinate matrix to CRS matrix\n");
+
+    saveBinCRS(argv[2], N, row, col, valCRS);
+    printf("Finished saving CRS matrix\n");
 
     free(I);
     free(J);
