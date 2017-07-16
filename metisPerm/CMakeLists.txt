@@ -1,0 +1,5 @@
+set(SOURCE main.c)
+find_package(METIS REQUIRED)
+include_directories(${METIS_ICLUDE_DIR})
+add_executable(metisPerm ${SOURCE})
+target_link_libraries(metisPerm ${METIS_LIBRARIES})
