@@ -3,6 +3,12 @@
 #include <string.h>
 #include <metis.h>
 
+void showHelp(){
+    printf("Program to get metis permutation for symmetric matrix\n");
+    printf("First argument - matrix in binary format\n");
+    printf("Second argument - file to save permuatation\n");
+}
+
 int readBinCRSstruct(char *filename, int *n, int **row, int **col){
     FILE *f;
     int nz;
@@ -20,8 +26,7 @@ int readBinCRSstruct(char *filename, int *n, int **row, int **col){
     return 0;
 }
 
-int CRSMatrixToGraph(int* column, int* row, int** GraphXadj, int** GraphAdjncy, int n)
-{
+int CRSMatrixToGraph(int* column, int* row, int** GraphXadj, int** GraphAdjncy, int n) {
     int i;  int j;  int neigb;
     int nEdges = 2*(row[n] - n);  int* AdjPos;
     (*GraphXadj) = (int*)malloc(sizeof(int)*(n + 1));
@@ -50,8 +55,7 @@ int CRSMatrixToGraph(int* column, int* row, int** GraphXadj, int** GraphAdjncy, 
     return 0;
 }
 
-int getMetisPermutation(int *column, int *row, int *perm, int *iperm, int n)
-{
+int getMetisPermutation(int *column, int *row, int *perm, int *iperm, int n) {
     int* GraphXadj;	int* GraphAdjncy;
     //not working on Windows 10 + VS2015 + Intel compiler 2016
     int* options = (int*)malloc(sizeof(int)*METIS_NOPTIONS);
@@ -65,10 +69,30 @@ int getMetisPermutation(int *column, int *row, int *perm, int *iperm, int n)
     return 0;
 }
 
+int savePermutation(char *filename, int n, int *iperm){
+    FILE *f;
+    int i;
+    f = fopen(filename, "w");
+    for(i = 0; i < n; i++)
+        fprintf(f, "%d\n", iperm[i]);
+    fclose(f);
+    return 0;
+}
 int main(int argc, char* argv[]){
     int *row, *col, n;
+    int *perm, *iperm;
+    if (argc < 3) {
+        showHelp();
+        return 0;
+    }
     readBinCRSstruct(argv[1], &n, &row, &col);
+    perm = (int*)malloc(n * sizeof(int));
+    iperm = (int*)malloc(n * sizeof(int));
+    getMetisPermutation(col, row, perm, iperm, n);
+    savePermutation(argv[2], n, iperm);
     free(row);
+    free(perm);
+    free(iperm);
     free(col);
     return 0;
 }
