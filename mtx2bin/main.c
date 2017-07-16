@@ -61,6 +61,52 @@ int readMTX(const char* fileName, int **I, int **J, double **val, int *M, int *N
     return 0;
 }
 
+int COOtoCRS(int n, int nz, int *I, int *J, double *valCOO, int **row, int **col, double **valCRS){
+    int i;
+    int *places;
+
+    (*row) = (int*)malloc((n+1)*sizeof(int));
+    (*col) = (int*)malloc((nz)*sizeof(int));
+    (*valCRS) = (double*)malloc((nz)*sizeof(double));
+    places = (int*)malloc(n*sizeof(int));
+
+    for(i = 0; i < n+1; i++){
+        (*row)[i] = 0;
+    }
+    for(i = 0; i < nz; i++){
+        (*row)[I[i]+1] += 1;
+    }
+    for(i = 0; i < n; i++){
+        (*row)[i+1] += (*row)[i];
+        places[i] = (*row)[i];
+    }
+    for(i = 0; i < nz; i++){
+        (*col)[places[I[i]]] = J[i];
+        (*valCRS)[places[I[i]]] = valCOO[i];
+        places[I[i]]++;
+    }
+    //sort each column
+    for(i = 0; i < n; i++){
+        int start, finish, j, k;
+        start = (*row)[i];
+        finish = (*row)[i+1];
+        //need to write bubble sort
+        for(j = start; j < finish; j++)
+            for(k = start; k < finish -j - 1; k++)
+                if ((*col)[k]>(*col)[k+1]){
+                    int tempCol = (*col)[k];
+                    (*col)[k] = (*col)[k+1];
+                    (*col)[k+1] = tempCol;
+
+                    double tempVal = (*valCRS)[k];
+                    (*valCRS)[k] = (*valCRS)[k+1];
+                    (*valCRS)[k+1] = tempVal;
+                }
+
+    }
+    free(places);
+    return 0;
+}
 int saveBin(const char* fileName, int *I, int *j, double *val){
     return 0;
 }
@@ -69,6 +115,9 @@ int main(int argc, char* argv[]){
     int error = 0;
     int *I, *J;
     double *val;
+    int *row, *col;
+    double *valCRS;
+
     int M, N, nz;
     if (argc < 2) {
         printHelp();
@@ -76,9 +125,15 @@ int main(int argc, char* argv[]){
     }
     if (readMTX(argv[1], &I, &J, &val, &M, &N, &nz) != 0)
         exit(0);
+    COOtoCRS(N, nz, I, J, val, &row, &col, &valCRS);
+    printf("Finished converting coordinate matrix to CRS matrix");
+
     free(I);
     free(J);
     free(val);
+    free(row);
+    free(col);
+    free(valCRS);
 
     return 0;
 }
