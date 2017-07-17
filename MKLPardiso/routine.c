@@ -820,7 +820,18 @@ int printSolution(char * outFile, int n, int m, FLOAT_TYPE *vectorX)
     fclose(vectorFile);
     return SOLV_SYSTEM_OK;
 }
-
+int printSolutionBin(char *outFile, int n, int m,  FLOAT_TYPE *vectorX){
+    FILE* vectorFile;
+    int i,j;
+    vectorFile = fopen(outFile, "wb");
+    fwrite(&n, sizeof(int), 1, vectorFile);
+    fwrite(&m, sizeof(int), 1, vectorFile);
+    for(i = 0; i < m; i++){
+        fwrite(vectorX + i*n, sizeof(FLOAT_TYPE), n, vectorFile);
+    }
+    fclose(vectorFile);
+    return SOLV_SYSTEM_OK;
+}
 
 /**
 * API

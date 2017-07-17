@@ -90,6 +90,7 @@ int testSolution(int n, int * column, int * row, FLOAT_TYPE *val,
 
 int printSolution(char * outFile, int n, int m, FLOAT_TYPE *vectorX);
 
+int printSolutionBin(char *outFile, int n, int m,  FLOAT_TYPE *vectorX);
 
 int allocMatrix(int n, int nz, int ** column, int ** row, FLOAT_TYPE **val);
 

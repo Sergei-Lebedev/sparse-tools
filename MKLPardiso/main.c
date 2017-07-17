@@ -21,10 +21,12 @@ int main(int argc, char ** argv)
     int s,f;
     if(argc < 4)
     {
-        printf("SolvSystem.exe <typeFile> <matrix A> <vector b> [<out vector x>]\n\n");
+        printf("Pardiso <typeFile> <matrix A> <vector b> <reordering vector> <out vector x>\n\n");
         printf("  typeFile:\n");
         printf("  0 - mtx (text file)\n");
         printf("  1 - binary format \n");
+        printf("  qqq.bin is reserved keyword for <vector b>. If qqq.bin is used then right hand side is all ones.\n");
+        printf("Example: ./pardiso 1 /common/SLA/Matrices/lf10.bin qqq.bin /common/SLA/Reorderings/Metis5.1.0/lf10.iperm lf10.X\n");
         return 1;
     }
     
@@ -45,7 +47,8 @@ int main(int argc, char ** argv)
     f = clock();
     printf("Time total: %f \n", (double)(f - s) / CLOCKS_PER_SEC);
 
-	printSolution(argv[5], n, m, vectorX);
+    //printSolution(argv[5], n, m, vectorX);
+    printSolutionBin(argv[5], n, m, vectorX);
     testSolution(n, column, row, val, m, vectorB, vectorX, &calculationError);
 
     printf("Calculation Error: \n");
